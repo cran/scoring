@@ -1,0 +1,12 @@
+443f5fba921ad19241f3a59fc01837ae *DESCRIPTION
+3607a2278576b5715cf0084af082a8cf *NAMESPACE
+e338fec52cba39b2d382d315dea6c46f *R/calcscore.R
+f74b8718012cd15a0b3e9e33cb9a5de5 *R/fams.R
+1df07f0fd2c7853e21134e214f64f71b *R/plotscore.R
+bea4aae967de98a334c9bcfd78337a45 *R/scalescores.R
+41011aac828200c3c9791320606b4150 *R/scoreitems.R
+f68148f9b7c07bc14f47e76462830d71 *data/WorldEvents.rda
+356e4ceae68e687d876c01e07944c8bf *man/WorldEvents.Rd
+c2bb0e4a5a30f920ff6e966182498bdc *man/calcscore.Rd
+1e3e149273a66277f4bae7d99af4c1a8 *man/plotscore.Rd
+11327d60a919027f8ce8d38ac0fbb4ab *man/scoring.internal.Rd
