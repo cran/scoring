@@ -4,11 +4,10 @@ function(pars, fam="pow"){
 
   if(fam=="beta"){
       ## TODO Match scaling in paper?
-      xplier <- max(betafam(.0001, d=1, param=pars),
-                    betafam(.9999, d=0, param=pars))
+      xplier <- max(betafam(0, d=1, param=pars),
+                    betafam(1, d=0, param=pars))
 
-      if(max(betafam(0, d=1, param=pars),
-             betafam(1, d=0, param=pars))==Inf){
+      if(xplier == Inf){
           warning("Scaling does not work because maximum possible score is Inf.")
           xplier <- 1
       }

@@ -1,0 +1,6 @@
+Changes in Version 0.2 (NOT YET SUBMITTED)
+
+    o Fixed a bug associated with the beta family, where scaling=TRUE 
+      sometimes still resulted in scores > 1.
+
+    o Updated Merkle & Steyvers reference to reflect its acceptance.

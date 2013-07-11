@@ -17,7 +17,6 @@ function(p, d, param){
         warning("A score evaluates to infinity.")
         res <- Inf
     }
-        #stop("Maximum possible score is probably infinity. Try scaling=FALSE.")
 
     res
 }

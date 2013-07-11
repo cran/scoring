@@ -40,7 +40,7 @@ Jose, V. R. R., Nau, R. F., & Winkler, R. L. (2008). Scoring rules, generalized 
 
 Jose, V. R. R., Nau, R. F., & Winkler, R. L. (2009). Sensitivity to distance and baseline distributions in forecast evaluation. \emph{Management Science, 55}, 582--590.
 
-Merkle, E. C. & Steyvers, M. (2013). Choosing a strictly proper scoring rule. \emph{Manuscript under review}.
+Merkle, E. C. & Steyvers, M. (in press). Choosing a strictly proper scoring rule. \emph{Decision Analysis}.
 }
 \author{
 Ed Merkle
