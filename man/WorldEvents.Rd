@@ -36,5 +36,8 @@ data("WorldEvents")
 
 ## Average forecast for each item
 with(WorldEvents, tapply(forecast, item, mean))
+
+## Brier scores
+bs <- calcscore(answer ~ forecast, data = WorldEvents, bounds=c(0,1))
 }
 \keyword{datasets}

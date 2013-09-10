@@ -1,16 +1,25 @@
 plotscore <-
-function(param=c(2,.5), fam="pow", scaling=FALSE, legend=TRUE, ...){
+function(param=c(2,.5), fam="pow", bounds, reverse=FALSE, legend=TRUE, ...){
     ## Plot scoring rules (for two-alternative rules only)
-    p <- seq(.01,.99,.01)
+    if(length(param) > 2) stop("plotscore is only for two-alternative rules.\n")
 
-    sc1 <- calcscore(p, rep(1,length(p)), fam, param, scaling=scaling)
-    sc0 <- calcscore(p, rep(0,length(p)), fam, param, scaling=scaling)
-
-    if(scaling){
-        yl <- c(min(sc1,sc0), max(sc1,sc0))
-    } else {
-        yl <- c(min(sc1,sc0)-.5, max(sc1,sc0)+.5)
+    ## For deprecated scaling argument
+    dots <- list(...)
+    
+    if(exists("dots$scaling")){
+      if(dots$scaling) bounds <- c(0,1)
     }
+    
+    p <- seq(.01,.99,.01)
+    
+    if(missing(bounds)) bounds <- NULL
+    sc1 <- calcscore(p, rep(1,length(p)), fam, param, bounds=bounds, reverse=reverse)
+    sc0 <- calcscore(p, rep(0,length(p)), fam, param, bounds=bounds, reverse=reverse)
+
+    ymin <- min(sc1,sc0)
+    ymax <- max(sc1,sc0)
+    
+    yl <- c(ymin - .05*(ymax - ymin), ymax + .05*(ymax - ymin))
 
     main.arg <- list(x=p, y=sc1)
     supplied <- list(...)

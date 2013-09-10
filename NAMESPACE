@@ -1,1 +1,5 @@
-export("calcscore", "plotscore")
+export(
+    "calcscore",
+    "calcscore.formula",
+    "calcscore.default",
+    "plotscore")
