@@ -1,3 +1,12 @@
+Changes in Version 0.4
+
+    o Fixed bug in scalescores(), causing some min/max values of
+      pow- and sph-families to be computed incorrectly.  This
+      impacted attempted use of the 'bounds' argument.
+
+    o Corrected the 'made' column of WeatherProbs to reflect correct
+      dates.
+
 Changes in Version 0.3
 
     o Added support for scoring forecasts with greater than 2
