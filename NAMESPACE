@@ -1,5 +1,8 @@
 export(
+    "brierscore",
     "calcscore",
     "calcscore.formula",
     "calcscore.default",
-    "plotscore")
+    "logscore",
+    "plotscore",
+    "sphscore")
