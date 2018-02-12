@@ -7,20 +7,26 @@ function(p, d, param, ...){
     ## Convert to vector form
     p <- p[2]
     d <- 1*d==2
+
+    eps <- 1e-4
     
     "betaint" <- function(p, d, param){
-      ifelse(d==p, 0,
+      ifelse(abs(d-p) < eps, 0,
              (d*(1-p) + (1-d)*p)*(p^(param[1]-1))*((1-p)^(param[2]-1)))
     }
 
     lbnd <- d*p
     ubnd <- d + (1-d)*p
 
-    res <- try(integrate(betaint, lbnd, ubnd, d=d, param=param, subdivisions=100)$value, silent=TRUE)
+    if(abs(ubnd - lbnd) < eps){
+      res <- 0
+    } else {
+      res <- try(integrate(betaint, lbnd, ubnd, d=d, param=param, subdivisions=100)$value, silent=TRUE)
 
-    if(inherits(res,"try-error")){
-        warning("A score evaluates to infinity.")
-        res <- Inf
+      if(inherits(res,"try-error")){
+          warning("A score evaluates to infinity.")
+          res <- Inf
+      }
     }
 
     res
@@ -95,19 +101,18 @@ ordwrap <- function(data, param, fam){
               x[2:length(x)]}))
 
     ## Cumulative baselines for pow and sph
-    if(length(param) > 1){
-        Q <- cumsum(param[2:length(param)])
+    if(ncol(param) > 1){
+        Q <- t(apply(param, 1, function(x) cumsum(x[2:length(x)])))
     }
 
-    ## FIXME: Modify calcscore to accept different param values
-    ##        for each forecast row, then this loop can be removed.
     ## TODO: This assumes a single family parameter (ok for pow and sph),
     ##       followed by baselines.  Greater flexibility will be allowed
     ##       if baselines are separate argument from family parameters.
+
     runscore <- rep(0, nrow(data))
     for(i in 1:ncol(p1)){
-        if(length(param) > 1){
-            tmpparam <- c(param[1], Q[i], 1 - Q[i])
+        if(ncol(param) > 1){
+            tmpparam <- cbind(param[,1], Q[,i], 1 - Q[,i])
         } else {
             tmpparam <- param
         }
@@ -119,7 +124,7 @@ ordwrap <- function(data, param, fam){
         runscore <- runscore + tmpscore
     }
 
-    runscore
+    runscore/ncol(p1)
 }
 
 

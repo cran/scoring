@@ -1,0 +1,3 @@
+The scoring package applies scoring rules to probabilistic forecasts and also performs weighted Brier decompositions, with a novel implementation of resampling methods. Portions of the weighted Brier decomposition code are based on code that was included in:
+
+Merkle, E. C. & Hartman, R. (2018). Weighted Brier score decompositions for topically heterogeneous forecasting tournaments. Manuscript submitted.

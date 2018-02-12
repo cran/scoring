@@ -10,7 +10,7 @@ calcscore.formula <- function(object, fam="pow", param, data, bounds=NULL, rever
     if("scaling" %in% names(dots)){
       if(dots$scaling) bounds <- c(0,1)
     }
-  
+
     if(missing(data)) data <- environment(object)
     mf <- match.call()
     m <- match(c("object", "data"), names(mf), 0L)
@@ -19,6 +19,12 @@ calcscore.formula <- function(object, fam="pow", param, data, bounds=NULL, rever
 
     ## Get outcomes and forecasts
     mf[[1L]] <- as.name("model.frame")
+    ## to send rows with NA through:
+    if(length(mf) == 3L){
+      mf[[4L]] <- na.pass
+      names(mf)[4] <- "na.action"
+      #attr(mf[[3L]], 'na.action') <- na.pass
+    }
     mf <- eval(mf, parent.frame())
     mt <- attr(mf, "terms")
     outcome <- model.response(mf, "any")
@@ -47,6 +53,12 @@ function(object, outcome, fam="pow", param=c(2,rep(1/max(2,NCOL(forecast)),max(2
         } else {
             group <- rep(1, NROW(object))
         }
+
+        if("decompControl" %in% names(dots)){
+            decargs <- dots$decompControl
+        } else {
+            decargs <- NULL
+        }
     } else {
         decomp <- FALSE
         group <- 1
@@ -70,7 +82,7 @@ function(object, outcome, fam="pow", param=c(2,rep(1/max(2,NCOL(forecast)),max(2
     if(NCOL(forecast)>2 & fam=="beta") stop("Beta family cannot be used with >2 alternatives.\n")
     ## Check that forecast rows sum to 1.  If not, rescale and warn.
     if(is.matrix(forecast) | is.data.frame(forecast)){
-      ss <- rowSums(forecast)
+      ss <- rowSums(forecast, na.rm=TRUE)
       if(any(ss != 1)){
         warning("Forecasts in some rows do not sum to 1; they were scaled to sum to 1.")
       }
@@ -78,7 +90,7 @@ function(object, outcome, fam="pow", param=c(2,rep(1/max(2,NCOL(forecast)),max(2
     ## Check beta family params
     if(fam=="beta"){
         if(any(param <= -1)) stop("Beta family parameters must be greater than -1")
-        if(ordered){
+        if(any(ordered)){
             ordered <- FALSE
             warning("ordered=TRUE has no impact on beta family scores.")
         }
@@ -95,29 +107,43 @@ function(object, outcome, fam="pow", param=c(2,rep(1/max(2,NCOL(forecast)),max(2
 
     ## Number of alternatives and number of parameters
     nalts <- ifelse(NCOL(forecast) <= 2, 2, NCOL(forecast))
-    npars <- length(param)
+    if(class(param)=="numeric") param <- matrix(param, 1, length(param))
+    npars <- NCOL(param)
+    nparrows <- NROW(param)
 
     ## For fam=pow or sph, check to ensure that baseline params sum to 1.
     if(fam %in% c("pow","sph")){
         ## If length(param)==1, then assume this is a rule without
         ## a baseline.
-        if(npars > 1){
-            if(sum(param[2:npars]) != 1){
+        if(npars > 1 & nparrows == 1){
+            if(sum(param[1, 2:npars]) != 1){
                 ## If two alternatives and one baseline, take
                 ## complement
                 if(npars==2){
                     if(NCOL(forecast)==1){
-                        param <- c(param[1], 1-param[2], param[2])
+                        param <- matrix(c(param[1,1], 1-param[1,2], param[1,2]),
+                                        1, 3)
                     } else {
-                        warning("Only one baseline parameter supplied. This parameter is assumed to correspond to alternative associated with the first column of forecasts.\n")
-                        param <- c(param, 1-param[2])
+                        warning("Only one baseline parameter supplied. This parameter is assumed to correspond to the alternative associated with the first column of forecasts.\n")
+                        param <- matrix(c(param, 1-param[1,2]), 1, 3)
                     }
                 } else {
                     if(npars != (nalts+1)) stop("Length of param is incorrect.\n")
                     warning("Baseline parameters were scaled to sum to 1.")
-                    param[2:npars] <- param[2:npars]/sum(param[2:npars])
-                }
-            }
+                    param[1, 2:npars] <- param[1, 2:npars]/sum(param[1, 2:npars])
+                }  ## npars==2
+            }  ## sum != 1
+            param <- t(matrix(param, ncol(param), noutcomes))
+            fam <- rep(fam, noutcomes)
+        } else if(npars == 1 & nparrows == 1){
+            param <- matrix(rep(param, noutcomes), noutcomes, 1)
+            fam <- rep(fam, noutcomes)
+        } else if(npars > 1 & nparrows == noutcomes){
+            ## Ensure it is a matrix
+            param <- as.matrix(param)
+            if(length(fam)==1) fam <- rep(fam, noutcomes)
+        } else {
+            stop("Problem with param matrix.  Check that number of param rows equal number of forecast rows.")
         }
     }
     ## END ERROR CHECKING
@@ -126,7 +152,8 @@ function(object, outcome, fam="pow", param=c(2,rep(1/max(2,NCOL(forecast)),max(2
     if(NCOL(forecast)==1) forecast <- cbind(1-forecast, forecast)
     datmat <- cbind(forecast, outcome)
     ## Obtain unscaled scores
-    sc <- scoreitems(param, datmat, fam, ordered, decomp, group)
+    sc <- scoreitems(param, datmat, fam, ordered, decomp, group,
+                     decargs)
 
     ## If decomp=TRUE, sc is a list:
     if(decomp){
@@ -136,31 +163,32 @@ function(object, outcome, fam="pow", param=c(2,rep(1/max(2,NCOL(forecast)),max(2
 
     ## Scale if desired
     if(!is.null(bounds)){
-        ## Aug 26 2013: scoreitems appears to handle multiple alts
-        ## 2-alternative examples yield same results as before
-        scalefactor <- scalescores(param, fam, ordered, nalts)
-
-        lbound <- ifelse(is.na(bounds[1]), 0, bounds[1])
-        ubound <- ifelse(is.na(bounds[2]), 1 + lbound, bounds[2])
-
-        if(fam=="beta"){
-            sc <- sc/scalefactor
+        ## TODO Apply scalescores() to each unique scoring rule
+        if(nparrows > 1 | !all(ordered == ordered[1])){
+            warning("Scaling currently unavailable when the scoring rule differs by row.")
         } else {
-            sc <- (sc - scalefactor[1])/diff(scalefactor)
+            scalefactor <- scalescores(param[1,], fam[1], ordered, nalts)
+
+            lbound <- ifelse(is.na(bounds[1]), 0, bounds[1])
+            ubound <- ifelse(is.na(bounds[2]), 1 + lbound, bounds[2])
+
+            if(fam[1]=="beta"){
+                sc <- sc/scalefactor
+            } else {
+                sc <- (sc - scalefactor[1])/diff(scalefactor)
+            }
+            sc <- lbound + (ubound - lbound)*sc
+
+            if(reverse){
+                sc <- lbound + ubound - sc
+            }
         }
-        sc <- lbound + (ubound - lbound)*sc
     }
 
-    if(reverse){
-        if(is.null(bounds)){
-            sc <- -sc
-        } else {
-            sc <- lbound + ubound - sc
-        }
-    }
+    if(reverse & is.null(bounds)) sc <- -sc
 
     if(any(is.na(sc))){
-        stop("Problem with score calculation.  Ensure parameter values are valid.")
+        warning("Some scores are NA. This may be due to missing data in your forecasts or outcomes, or an ill-defined param argument.")
     }
 
     if(decomp){
